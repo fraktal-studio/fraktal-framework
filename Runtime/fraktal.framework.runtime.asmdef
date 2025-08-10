@@ -1,0 +1,17 @@
+{
+    "name": "fraktal.framework.runtime",
+    "rootNamespace": "",
+    "references": [
+        "GUID:e4a8a8c62069e5c5b93179cf3600a42d",
+        "GUID:e1102a38547ce684f9a5ef7d8dd84790"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
