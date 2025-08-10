@@ -2,8 +2,6 @@
 
 All notable changes to Fraktal Framework will be documented here.
 
-## [Unreleased]
-
 ### Added
 - Initial project setup and folder structure
 - Core dependency injection pipeline and attributes
