@@ -107,7 +107,7 @@ public class ValidationStep : IPipelineStep<InjectionContext>
 
 ## Contributing
 
-[Contributing guidelines would go here](CONTRIBUTING.md)
+Check [Contributing Guidelines](CONTRIBUTING.md)
 
 ## License
 
