@@ -218,10 +218,6 @@ Click **Inject** and Fraktal will run your custom pipeline using your custom con
 6. Paste `https://github.com/fraktal-studio/fraktal-framework.git`
 7. Click Install
 
-```
-
-```
-
 ---
 
 ## Community & Support
