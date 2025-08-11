@@ -148,7 +148,6 @@ public class CustomPipelineBuilder : IFactory<int, InjectionPipeline>
     {
         var pipeline = new InjectionPipeline();
         pipeline.AddStep(new ValidationStep());
-        pipeline.AddStep(new DefaultInjectionStep());
         return pipeline;
     }
 }
