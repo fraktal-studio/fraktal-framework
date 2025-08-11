@@ -74,10 +74,6 @@ namespace Fraktal.Framework.Editor.Defaults
         /// All services use their standard implementations (<see cref="ReflectionFieldFactory"/>, 
         /// <see cref="HashSetHierarchyTracker"/>, etc.) providing reliable default behavior.
         /// </para>
-        /// <para>
-        /// <strong>Bug Note:</strong> <see cref="IHierarchyTracker"/> is registered twice in this method,
-        /// which should be corrected to avoid potential service conflicts.
-        /// </para>
         /// </remarks>
         InjectionContext IFactory<InjectionContext>.Create()
         {

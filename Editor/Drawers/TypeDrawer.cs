@@ -102,10 +102,6 @@ namespace Fraktal.Framework.Editor.Drawers
         /// This method generates display names from Type.Name for use in dropdown controls. 
         /// Names are cached to avoid repeated string operations during GUI rendering.
         /// </para>
-        /// <para>
-        /// The method includes debugging output (Debug.Log) that should be removed in production 
-        /// code to avoid console spam during type discovery operations.
-        /// </para>
         /// </remarks>
         private string[] GetOrRegisterNames(Type type)
         {
@@ -114,7 +110,6 @@ namespace Fraktal.Framework.Editor.Drawers
             if (cachedNames.ContainsKey(type))
                 return cachedNames[type];
             Type[] types = GetOrRegisterTypes(type);
-            Debug.Log(types.Length);
             cachedNames[type] = types.Select(t => t.Name).ToArray();
             return cachedNames[type];
         }

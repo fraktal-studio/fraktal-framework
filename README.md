@@ -212,10 +212,14 @@ Click **Inject** and Fraktal will run your custom pipeline using your custom con
 
 1. Open Unity's **Package Manager**.
 2. Click **+** → *Install package from Git URL…*
-3. Paste:
+3. Paste: `https://github.com/fraktal-studio/design-patterns.git`
+4. Click Install
+5. Click **+** → *Install package from Git URL* again
+6. Paste `https://github.com/fraktal-studio/fraktal-framework.git`
+7. Click Install
 
 ```
-https://github.com/fraktal-studio/fraktal-framework.git
+
 ```
 
 ---

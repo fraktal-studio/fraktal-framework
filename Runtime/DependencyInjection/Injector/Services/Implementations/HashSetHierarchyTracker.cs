@@ -79,15 +79,6 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// hierarchy, the entire hierarchy is reset.
         /// </para>
         /// </remarks>
-        /// <example>
-        /// <code>
-        /// // This will work for child objects
-        /// tracker.SetCurrent(childGameObject);
-        /// 
-        /// // This will throw NullReferenceException for root objects
-        /// tracker.SetCurrent(rootGameObject);
-        /// </code>
-        /// </example>
         public void SetCurrent(GameObject obj)
         {
             if (obj == null)

@@ -61,7 +61,6 @@ namespace Fraktal.Framework.DI.Injector.Services
         {
 
             TypeCache.TypeCollection collection = TypeCache.GetTypesDerivedFrom<IFieldStrategy>();
-            Debug.Log(collection.Count);
             foreach (Type type in collection)
             {
                 var ctor = type.GetConstructor(Type.EmptyTypes);
@@ -109,18 +108,13 @@ namespace Fraktal.Framework.DI.Injector.Services
             if (attr == null) return null;
             if (!registration.Get(attr.DependencyStrategy, out var strategy))
             {
-                Debug.Log("Not found ");
+                Debug.LogWarning($"The provided type is not a strategy: {component.GetType().Name}: {field.FieldType.Name} {field.Name}");
                 return null;
             }
 
-            if (strategy is not IFieldStrategy casted)
-            {
-                Debug.Log("Wrong type");
-                return null;
-            }
-               
-            Debug.Log("returned");
-            return new ReflectionField(field, component, casted);
+            var strat = (IFieldStrategy)strategy;
+            
+            return new ReflectionField(field, component, strat);
         }
     }
 }
