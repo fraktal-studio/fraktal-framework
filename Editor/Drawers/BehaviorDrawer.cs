@@ -76,6 +76,8 @@ namespace Fraktal.Framework.Editor.Drawers
             serializedObject.Update();
 
             DrawPropertiesExcluding(serializedObject, "m_Script");
+
+            serializedObject.ApplyModifiedProperties();
         }
 
         /// <summary>
