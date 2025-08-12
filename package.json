@@ -1,13 +1,13 @@
 {
   "name": "com.fraktal.framework",
   "displayName": "Fraktal Framework",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "unity": "2021.3",
   "description": "Modular dependency-injection framework for Unity.",
   "author": { "name": "Fraktal Studio", "url": "https://github.com/fraktal-studio" },
   "keywords": ["fraktal", "di", "framework", "unity"],
   "license": "MIT",
   "dependencies": {
-    "com.fraktal.design-patterns": "1.0.0"
+    "com.fraktal.design-patterns": "1.0.3"
   }
 }
