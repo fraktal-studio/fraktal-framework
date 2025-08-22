@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Fraktal.DesignPatterns;
 using Fraktal.Framework.Core;
@@ -7,6 +8,7 @@ using Fraktal.Framework.DI.Injector.Pipeline;
 using Fraktal.Framework.DI.Injector.Services;
 using Fraktal.Framework.DependencyInjection.Injector.FieldManagement.Abstract;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Fraktal.Framework.DI.Injector.Steps
 {
@@ -48,8 +50,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
     /// <seealso cref="ProcessFieldStep"/>
     /// <seealso cref="IFieldFactory"/>
     /// <seealso cref="IOneShotFieldStrategy"/>
-    [Serializable]
-    public class CollectFieldStep :IPipelineStep<InjectionContext>
+    public class CollectFieldStep :PipelineStep<InjectionContext>
     {
         /// <summary>
         /// Processes the injection context to collect dependency-marked fields from the current object.
@@ -75,19 +76,51 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// as they cannot participate in the dependency injection system.
         /// </para>
         /// </remarks>
-        public InjectionContext Proccess(InjectionContext input)
+        public override InjectionContext Process(InjectionContext input)
         {
-            IEmptyFieldsService emptyFieldsService = input.GetOrRegister<IEmptyFieldsService>();
-            IFailedFieldsService failedFieldsService = input.GetOrRegister<IFailedFieldsService>();
-            IFieldFactory fieldFactory = input.GetOrRegister<IFieldFactory>();
-            ISucceededFieldsService succeeded = input.GetOrRegister<ISucceededFieldsService>();
+            if (!input.Services.Get(out IEmptyFieldsService emptyFieldsService))
+            {
+                Error("IEmptyFieldsService");
+                return input;
+            }
+
+            if (!input.Services.Get(out IFailedFieldsService failedFieldsService))
+            {
+                Error("IFailedFieldsService");
+                return input;
+            }
+
+            if (!input.Services.Get(out IFieldFactory fieldFactory))
+            {
+                Error("IFieldFactory");
+                return input;
+            }
+
+            if (!input.Services.Get(out ISucceededFieldsService succeeded))
+            {
+                Error("ISucceededFieldsService");
+                return input;
+            }
+
+            if (!input.Services.Get(out IChangesTracker changesTracker))
+            {
+                Error("IChangesTracker");
+                return input;
+            }
 
             UnityEngine.Object go = input.currentObject;
-            if (go is not FraktalBehavior component) return input;
-            Collect(component, input,emptyFieldsService, fieldFactory, failedFieldsService,succeeded);
+            if (go is not IFraktalObject) return input;
+            if (go is not Component component) return input;
+            Collect(component, input,emptyFieldsService, fieldFactory, failedFieldsService,succeeded, changesTracker);
             
             return input;
 
+        }
+
+        private void Error(string name)
+        {
+            SetCancelled(true);
+            Debug.Log($"{name} not found exiting process");
         }
 
         /// <summary>
@@ -99,6 +132,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// <param name="fieldFactory">Factory for creating <see cref="IField"/> wrappers from reflection data.</param>
         /// <param name="failedFieldsService">Service for tracking fields that failed immediate resolution.</param>
         /// <param name="succeeded">Service for tracking fields that were successfully resolved immediately.</param>
+        /// <param name="tracker">The change tracker for settings object dirty</param>
         /// <remarks>
         /// <para>
         /// This method uses reflection with <see cref="BindingFlags.DeclaredOnly"/> to examine only 
@@ -110,12 +144,13 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// dependency injection on private fields marked with dependency attributes.
         /// </para>
         /// </remarks>
-        private void Collect(Component component,InjectionContext context, IFieldsService service, IFieldFactory fieldFactory,IFieldsService failedFieldsService,ISucceededFieldsService succeeded)
+        private void Collect(Component component,InjectionContext context, IFieldsService service, IFieldFactory fieldFactory,IFieldsService failedFieldsService,ISucceededFieldsService succeeded, IChangesTracker tracker)
         {
-            Type t = component.GetType();
-            foreach (FieldInfo field in t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+            ICollection<IField> collec = fieldFactory.Create(component);
+            
+            foreach (IField field in collec)
             {
-                ProcessField(component, field,context, service, fieldFactory, failedFieldsService,succeeded);
+                ProcessField(component, field,context, service, fieldFactory, failedFieldsService,succeeded, tracker);
             }
         }
 
@@ -146,24 +181,25 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// without waiting for the processing phase.
         /// </para>
         /// </remarks>
-        private void ProcessField(Component component, FieldInfo fieldInfo,InjectionContext context, IFieldsService service, IFieldFactory fieldFactory,IFieldsService failedFieldsService,ISucceededFieldsService succeeded)
+        private void ProcessField(Component component, IField field,InjectionContext context, IFieldsService service, IFieldFactory fieldFactory,IFieldsService failedFieldsService,ISucceededFieldsService succeeded, IChangesTracker tracker)
         {
-            IField field = fieldFactory.Create(fieldInfo, component);
             if (field == null) return;
 
-            if (field.GetValue() != null)
+            if (field.GetValue(component) != null)
                 return;
             
             if (field.GetStrategy() is not IOneShotFieldStrategy oneShotStrategy)
             {
-                service.AddField(field);
+                service.AddField(component, field);
                 return;
             }
 
-            if (oneShotStrategy.Process(component, field,context))
+            if (oneShotStrategy.Process(component, field,context, component))
             {
-                succeeded.AddField(field);
-            } else failedFieldsService.AddField(field);
+                
+                succeeded.AddField(component,field);
+                tracker.AddChanges(component);
+            } else failedFieldsService.AddField(component, field);
                 
         }
     }

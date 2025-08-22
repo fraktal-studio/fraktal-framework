@@ -19,7 +19,7 @@ namespace Fraktal.Framework.DI.Injector.Strategies
     /// suitable for scenarios where the source of the dependency is not important.
     /// </para>
     /// <para>
-    /// The strategy is used by the <see cref="AnyDependencyAttribute"/> and is ideal for:
+    /// The strategy is used by the <see cref="ByAnyAttribute"/> and is ideal for:
     /// </para>
     /// <list type="bullet">
     /// <item>Global services that can come from anywhere in the scene</item>
@@ -45,7 +45,7 @@ namespace Fraktal.Framework.DI.Injector.Strategies
     /// }
     /// </code>
     /// </example>
-    /// <seealso cref="AnyDependencyAttribute"/>
+    /// <seealso cref="ByAnyAttribute"/>
     /// <seealso cref="SelfMatch"/>
     /// <seealso cref="AnyChildrenMatch"/>
     public class AnyMatch : IFieldStrategy
@@ -84,11 +84,11 @@ namespace Fraktal.Framework.DI.Injector.Strategies
         /// require any contextual information for decision making.
         /// </para>
         /// </remarks>
-        public bool Process(Object obj, IField field, InjectionContext context)
+        public bool Process(Object obj, IField field, InjectionContext context, Object instance)
         {
             if (!field.GetFieldType().IsAssignableFrom(obj.GetType()))
                 return false;
-            field.SetValue(obj);
+            field.SetValue(obj, instance);
             return true;
         }
     }

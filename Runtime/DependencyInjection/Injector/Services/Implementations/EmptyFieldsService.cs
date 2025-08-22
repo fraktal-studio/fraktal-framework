@@ -36,7 +36,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor allows for custom collection implementations to be used for storing 
         /// empty fields, which may be useful for ordered processing or other specialized behaviors.
         /// </remarks>
-        public EmptyFieldsService(ICollection<IField> fields) : base(fields)
+        public EmptyFieldsService(IDictionary<Object, ICollection<IField>> fields) : base(fields)
         {
             
         }
@@ -48,7 +48,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor provides a convenient way to create an empty fields service with 
         /// standard behavior, using a hash set for efficient field management.
         /// </remarks>
-        public EmptyFieldsService() : base(new HashSet<IField>())
+        public EmptyFieldsService() : base(new Dictionary<Object, ICollection<IField>>())
         {
             
         }

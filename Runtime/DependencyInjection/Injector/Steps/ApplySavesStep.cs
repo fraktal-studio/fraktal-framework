@@ -1,5 +1,7 @@
-﻿using Fraktal.DesignPatterns;
+﻿using System.Linq;
+using Fraktal.DesignPatterns;
 using Fraktal.Framework.DI.Injector.Pipeline;
+using Fraktal.Framework.DI.Injector.Services;
 using UnityEditor;
 
 namespace Fraktal.Framework.DI.Injector.Steps
@@ -30,7 +32,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
     /// </code>
     /// </example>
     /// <seealso cref="EditorUtility.SetDirty(UnityEngine.Object)"/>
-    public class ApplySavesStep : IPipelineStep<InjectionContext>
+    public class ApplySavesStep : PipelineStep<InjectionContext>
     {
         /// <summary>
         /// Marks the current object in the injection context as dirty to ensure persistence of changes.
@@ -48,11 +50,17 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// in the pipeline without affecting subsequent processing steps.
         /// </para>
         /// </remarks>
-        public InjectionContext Proccess(InjectionContext input)
+        public override InjectionContext Process(InjectionContext input)
         {
-            if (input != null)
-                EditorUtility.SetDirty(input.currentObject);
-            
+            if (!input.Services.Get(out IChangesTracker changesTracker))
+                return input;
+
+            var changed = changesTracker.GetChanges().ToArray();
+            foreach (UnityEngine.Object obj in changed)
+            {
+                changesTracker.RemoveChanges(obj);
+                EditorUtility.SetDirty(obj);
+            }
             return input;
         }
     }

@@ -1,6 +1,5 @@
-﻿using Fraktal.Framework.OdinSerializer;
+﻿using Fraktal.Framework.DI.Injector.Attributes;
 using UnityEngine;
-
 
 namespace Fraktal.Framework.Core
 {
@@ -14,7 +13,7 @@ namespace Fraktal.Framework.Core
     /// </para>
     /// <para>
     /// Components that inherit from <see cref="FraktalBehavior"/> can use dependency injection attributes 
-    /// (such as <see cref="AnyDependencyAttribute"/>, <see cref="ChildrenDependencyAttribute"/>, etc.) 
+    /// (such as <see cref="ByAnyAttribute"/>, <see cref="ChildrenDependencyAttribute"/>, etc.) 
     /// on their fields to automatically resolve dependencies during the injection process.
     /// </para>
     /// <para>
@@ -41,9 +40,27 @@ namespace Fraktal.Framework.Core
     /// }
     /// </code>
     /// </example>
-    public class FraktalBehavior : SerializedMonoBehaviour
+    public class FraktalBehavior : MonoBehaviour, IFraktalObject, IFraktalSerializable, ISerializationCallbackReceiver
     {
+        [SerializeField, HideInInspector]
+        private UnityEngine.Object[] _fraktalSerializedComponents;
 
+        public Object[] FraktalSerializedObjects
+        {
+            get => _fraktalSerializedComponents; 
+            set => _fraktalSerializedComponents = value;
+        }
+
+
+        public void OnBeforeSerialize()
+        {
+            FraktalSerialization.Serialize(this);
+        }
+
+        public void OnAfterDeserialize()
+        {
+            FraktalSerialization.Deserialize(this);
+        }
     }
 
 }

@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using Fraktal.Framework.DI.Injector.Pipeline;
 using Fraktal.Framework.DI.Injector.FieldManagement;
-using Fraktal.Framework.OdinSerializer;
-using Unity.VisualScripting;
-using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Fraktal.Framework.DI.Injector.Services
 {
@@ -31,16 +26,7 @@ namespace Fraktal.Framework.DI.Injector.Services
     /// </remarks>
     public class FieldsService : IFieldsService
     {
-        /// <summary>
-        /// The internal collection used to store managed fields.
-        /// </summary>
-        /// <remarks>
-        /// This field is marked with <see cref="OdinSerializeAttribute"/> to ensure proper 
-        /// serialization when the service is used in Unity editor contexts or saved as part 
-        /// of serialized assets.
-        /// </remarks>
-        [OdinSerialize]
-        private ICollection<IField> fields;
+        private IDictionary<Object, ICollection<IField>> fields;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FieldsService"/> class with the specified field collection.
@@ -51,7 +37,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// different behaviors such as ordered collections, concurrent collections, or collections 
         /// with specific performance characteristics.
         /// </remarks>
-        public FieldsService(ICollection<IField> fields)
+        public FieldsService(IDictionary<Object, ICollection<IField>> fields)
         {
             this.fields = fields;
         }
@@ -63,7 +49,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor provides a convenient way to create a field service with standard 
         /// behavior, using a hash set for efficient field management and automatic duplicate prevention.
         /// </remarks>
-        public FieldsService() : this(new HashSet<IField>())
+        public FieldsService() : this(new Dictionary<Object, ICollection<IField>>())
         {
             
         }
@@ -81,16 +67,12 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// affecting the service's internal collection.
         /// </para>
         /// </remarks>
-        public ICollection<IField> GetFields()
+        public IDictionary<Object, ICollection<IField>> GetFields()
         {
-            return fields.ToList();
+            return fields;
         }
 
-        /// <summary>
-        /// Gets the number of fields currently managed by this service.
-        /// </summary>
-        /// <value>The total count of fields in the internal collection.</value>
-        public int FieldCount => fields.Count;
+        public ICollection<IField> this[Object obj] => this.fields[obj];
 
         /// <summary>
         /// Adds a field to the service's managed collection.
@@ -104,9 +86,14 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// May be thrown by the underlying collection if <paramref name="field"/> is null, 
         /// depending on the collection implementation.
         /// </exception>
-        public void AddField(IField field)
+        public void AddField(Object obj,IField field)
         {
-            fields.Add(field);
+            if (!fields.ContainsKey(obj))
+            {
+                fields.Add(obj, new HashSet<IField>());
+            }
+            
+            fields[obj].Add(field);
         }
 
         /// <summary>
@@ -117,9 +104,11 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// <c>true</c> if the field was successfully removed; <c>false</c> if the field 
         /// was not found in the collection.
         /// </returns>
-        public bool RemoveField(IField field)
+        public bool RemoveField(Object obj,IField field)
         {
-            return fields.Remove(field);
+            if (!fields.ContainsKey(obj))
+                return false;
+            return fields[obj].Remove(field);
         }
     }
 }

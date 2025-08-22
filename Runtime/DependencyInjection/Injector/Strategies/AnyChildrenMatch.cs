@@ -79,16 +79,14 @@ namespace Fraktal.Framework.DI.Injector.Strategies
         /// implementations, and implicit conversions.
         /// </para>
         /// </remarks>
-        public bool Process(Object obj, IField field, InjectionContext context)
+        public bool Process(Object obj, IField field, InjectionContext context, Object instance)
         {
-            if (!context.Get(out IHierarchyTracker tracker)) return false;
-
-            Object instance = field.GetInstance();
+            if (!context.Services.Get(out IHierarchyTracker tracker)) return false;
             if (instance is not Component component) return false;
             if (!tracker.IsParent(component.gameObject)) return false;
             if (!field.GetFieldType().IsAssignableFrom(obj.GetType())) return false;
             
-            field.SetValue(obj);
+            field.SetValue(obj, instance);
             
             return true;
         }

@@ -1,81 +1,26 @@
-﻿using Fraktal.DesignPatterns;
-using Fraktal.Framework.DI.Injector.Pipeline;
-using Fraktal.Framework.Editor.Defaults;
+﻿using Fraktal.Framework.Editor.Defaults;
 using Fraktal.Framework.Editor.Drawers;
+using Fraktal.Framework.Editor.Settings;
+using FraktalFramework.Editor.Interfaces;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Fraktal.Framework.Editor.Injection
 {
-    /// <summary>
-    /// Unity Editor window for configuring and executing dependency injection operations
-    /// within the Fraktal Framework ecosystem.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The <see cref="InjectionWindow"/> provides a graphical user interface for developers
-    /// to configure and execute dependency injection processes through Unity's editor interface.
-    /// It allows configuration of injection pipelines and contexts before performing
-    /// automatic dependency resolution across scene objects.
-    /// </para>
-    /// <para>
-    /// The window supports a two-phase injection pipeline system, enabling complex
-    /// dependency resolution scenarios where different injection strategies may be
-    /// required at different stages of the process.
-    /// </para>
-    /// <para>
-    /// Key features include:
-    /// </para>
-    /// <list type="bullet">
-    /// <item>Visual configuration of injection pipeline builders</item>
-    /// <item>Context builder selection for dependency resolution scope</item>
-    /// <item>Two-phase pipeline execution support</item>
-    /// <item>Validation of required components before injection execution</item>
-    /// <item>Integration with Unity's EditorWindow system</item>
-    /// </list>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// // Access the injection window through Unity's menu system:
-    /// // Tools -> Fraktal Framework -> Injection
-    /// 
-    /// // Configure pipeline builders and context, then click "Inject" to execute
-    /// // dependency injection across all applicable scene objects
-    /// </code>
-    /// </example>
-    /// <seealso cref="DefaultPipelineBuilder"/>
     public class InjectionWindow : EditorWindow
     {
-        /// <summary>
-        /// Type drawer utility for rendering factory selection fields in the editor GUI.
-        /// </summary>
-        /// <remarks>
-        /// This drawer provides specialized rendering capabilities for factory type selection,
-        /// enabling users to choose appropriate factory implementations through dropdown
-        /// interfaces or type selection controls.
-        /// </remarks>
         private TypeDrawer drawer = new();
         
-        /// <summary>
-        /// Factory for creating the first phase injection pipeline.
-        /// </summary>
-        /// <remarks>
-        /// The first phase pipeline typically handles primary dependency resolution,
-        /// such as service location and basic component injection before more complex
-        /// dependency relationships are established.
-        /// </remarks>
-        private IFactory<int, InjectionPipeline> pipelineBuilderStep;
+        private IInjectionPipelineFactory pipelineBuilder;
         
-        /// <summary>
-        /// Factory for creating the injection context that defines the scope and
-        /// parameters for dependency resolution operations.
         /// </summary>
         /// <remarks>
         /// The injection context provides metadata and configuration for the injection
         /// process, including scope boundaries, resolution strategies, and filtering
         /// criteria for target objects.
         /// </remarks>
-        private IFactory<InjectionContext> contextBuilder;
+        private IInjectionContextFactory contextBuilder;
 
         /// <summary>
         /// Opens the Injection Window through Unity's editor menu system.
@@ -97,7 +42,13 @@ namespace Fraktal.Framework.Editor.Injection
         {
             GetWindow<InjectionWindow>("Auto Inject");
         }
-        
+
+        private void OnEnable()
+        {
+            pipelineBuilder = FraktalSettings.GetOrCreate().pipelineBuilder;
+            contextBuilder = FraktalSettings.GetOrCreate().contextBuilder;
+        }
+
         /// <summary>
         /// Renders the injection window's graphical user interface using Unity's immediate mode GUI system.
         /// </summary>
@@ -122,7 +73,7 @@ namespace Fraktal.Framework.Editor.Injection
         {
             EditorGUILayout.BeginVertical();
             DrawPipelineBuilder(
-               ref pipelineBuilderStep,
+               ref pipelineBuilder,
                "Injection Pipeline Builder"
             );
             
@@ -160,7 +111,7 @@ namespace Fraktal.Framework.Editor.Injection
                 return;
             }
             
-            UnityInjector.Inject(pipelineBuilderStep.Create(0), pipelineBuilderStep.Create(1), contextBuilder.Create());
+            UnityInjector.Inject(pipelineBuilder.Create(0), pipelineBuilder.Create(1), contextBuilder.Create());
             Close();
         }
 
@@ -179,8 +130,7 @@ namespace Fraktal.Framework.Editor.Injection
         /// </para>
         /// <list type="bullet">
         /// <item><see cref="contextBuilder"/> - Required for injection context creation</item>
-        /// <item><see cref="pipelineBuilderStep"/> - Required for first phase pipeline creation</item>
-        /// <item><see cref="pipelineBuilderStep2"/> - Required for second phase pipeline creation</item>
+        /// <item><see cref="pipelineBuilder"/> - Required for pipeline creation</item>
         /// </list>
         /// <para>
         /// This method serves as a safety mechanism to prevent runtime exceptions that
@@ -191,7 +141,7 @@ namespace Fraktal.Framework.Editor.Injection
         {
             if (
                 contextBuilder == null ||
-                pipelineBuilderStep == null
+                pipelineBuilder == null
                 )
             {
                 return true;
@@ -204,7 +154,7 @@ namespace Fraktal.Framework.Editor.Injection
         /// Renders a pipeline builder configuration control with a descriptive label and factory selection field.
         /// </summary>
         /// <param name="fact">
-        /// A reference to the <see cref="IFactory{InjectionPipeline}"/> that will be modified
+        /// A reference to the <see cref="IInjectionPipelineFactory"/> that will be modified
         /// by user interaction with the rendered control.
         /// </param>
         /// <param name="label">
@@ -224,11 +174,17 @@ namespace Fraktal.Framework.Editor.Injection
         /// and available for validation and execution.
         /// </para>
         /// </remarks>
-        private void DrawPipelineBuilder(ref IFactory<int,InjectionPipeline> fact, string label)
+        private void DrawPipelineBuilder(ref IInjectionPipelineFactory fact, string label)
         {
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label(label);
             fact = drawer.TypeField(fact);
+            var settings = FraktalSettings.GetOrCreate();
+            if (fact != settings.pipelineBuilder)
+            {
+                settings.pipelineBuilder = fact;
+                EditorUtility.SetDirty(settings);
+            }
             EditorGUILayout.EndHorizontal();
         }
         
@@ -236,7 +192,7 @@ namespace Fraktal.Framework.Editor.Injection
         /// Renders an injection context builder configuration control with a descriptive label and factory selection field.
         /// </summary>
         /// <param name="fact">
-        /// A reference to the <see cref="IFactory{InjectionContext}"/> that will be modified
+        /// A reference to the <see cref="IInjectionContextFactory"/> that will be modified
         /// by user interaction with the rendered control.
         /// </param>
         /// <param name="label">
@@ -255,11 +211,17 @@ namespace Fraktal.Framework.Editor.Injection
         /// dependency injection and how dependencies should be resolved.
         /// </para>
         /// </remarks>
-        private void DrawContext(ref IFactory<InjectionContext> fact, string label)
+        private void DrawContext(ref IInjectionContextFactory fact, string label)
         {
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label(label);
             fact = drawer.TypeField(fact);
+            var settings = FraktalSettings.GetOrCreate();
+            if (fact != settings.contextBuilder)
+            {
+                settings.contextBuilder = fact;
+                EditorUtility.SetDirty(settings);
+            }
             EditorGUILayout.EndHorizontal();
         }
     }

@@ -89,14 +89,13 @@ namespace Fraktal.Framework.DI.Injector.Strategies
         /// and implicit reference conversions.
         /// </para>
         /// </remarks>
-        public bool Process(Object obj, IField field, InjectionContext context)
+        public bool Process(Object obj, IField field, InjectionContext context, Object instance)
         {
-            var instance = field.GetInstance();
             if (instance is not Component dependencyComponent) return false;
             if (obj is not Component targetComponent) return false;
             if (dependencyComponent.gameObject != targetComponent.gameObject) return false;
-            if (!field.GetFieldType().IsAssignableFrom(obj.GetType())) return false;
-            field.SetValue(obj);
+            if (!field.IsAssignable(obj)) return false;
+            field.SetValue(obj, instance);
             return true;
         }
     }

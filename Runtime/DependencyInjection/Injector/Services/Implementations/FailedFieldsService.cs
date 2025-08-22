@@ -35,7 +35,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor allows for custom collection implementations to be used for storing 
         /// failed fields, which may be useful for specialized tracking or reporting requirements.
         /// </remarks>
-        public FailedFieldsService(ICollection<IField> fields) : base(fields)
+        public FailedFieldsService(IDictionary<Object, ICollection<IField>> fields) : base(fields)
         {
             
         }
@@ -47,7 +47,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor provides a convenient way to create a failed fields service with 
         /// standard behavior, using a hash set for efficient field management.
         /// </remarks>
-        public FailedFieldsService() : base(new HashSet<IField>())
+        public FailedFieldsService() : base(new Dictionary<Object, ICollection<IField>>())
         {
             
         }

@@ -13,7 +13,8 @@ Fraktal Framework simplifies Unity development by providing automatic dependency
 - **Interface Support** – Built-in support for interface-based dependencies
 - **Extensible Pipeline** – Customizable injection pipeline with step-based architecture
 - **Unity Integration** – Native Unity editor tools and inspector support
-- **Comprehensive Documentation** – Well-documented API for easy adoption
+- **Auto-Injection** – Automatic dependency resolution on hierarchy changes
+- **Visual Debugging** – Editor windows showing injection results and failures
 
 ---
 
@@ -21,9 +22,9 @@ Fraktal Framework simplifies Unity development by providing automatic dependency
 
 ### Minimal Example
 ```csharp
-public class PlayerController : FraktalBehaviour
+public class PlayerController : FraktalBehavior
 {
-    [AnyDependency] private InventoryManager inventory;
+    [ByAny] private InventoryManager inventory;
 
     void Start() => inventory.PrintStatus();
 }
@@ -36,16 +37,19 @@ When you run injection, `inventory` will be automatically populated with the sce
 ### Full Example with All Attributes
 
 ```csharp
-public class PlayerController : FraktalBehaviour
+public class PlayerController : FraktalBehavior
 {
-    [AutoDependency] // Finds from the same GameObject
+    [BySelf] // Finds from the same GameObject
     private IDamageable damageable;
 
-    [AnyDependency] // Searches entire scene
+    [ByAny] // Searches entire scene
     private InventoryManager inventorySystem;
 
-    [ChildrenDependency] // Searches child GameObjects
+    [ByChild] // Searches child GameObjects
     private IGroundDetector groundDetector;
+
+    [ByTag("Player")] // Finds by GameObject tag
+    private PlayerController otherPlayer;
 
     [Dependency] // Manual assignment via Inspector
     private IInteractor interactor;
@@ -58,24 +62,31 @@ public class PlayerController : FraktalBehaviour
 
 ## Dependency Attributes
 
-| Attribute              | Scope              | Description                             |
-| ---------------------- | ------------------ | --------------------------------------- |
-| `[AutoDependency]`     | Same GameObject    | Finds components on the same GameObject |
-| `[AnyDependency]`      | Scene-wide         | Finds components anywhere in the scene  |
-| `[ChildrenDependency]` | Child GameObjects  | Finds components in child GameObjects   |
-| `[Dependency]`         | Inspector-assigned | Explicit reference via Unity Inspector  |
+| Attribute          | Scope              | Description                                |
+| ------------------ | ------------------ | ------------------------------------------ |
+| `[BySelf]`         | Same GameObject    | Finds components on the same GameObject    |
+| `[ByAny]`          | Scene-wide         | Finds components anywhere in the scene     |
+| `[ByChild]`        | Child GameObjects  | Finds components in child GameObjects      |
+| `[ByTag("tag")]`   | Tagged objects     | Finds objects with specified tag           |
+| `[Dependency]`     | Inspector-assigned | Explicit reference via Unity Inspector     |
 
 ---
 
 ## Running Injection
 
-1. Navigate to **Tools → Fraktal Framework → Inject**.
-2. Select:
-    - **Pipeline Builder** – Implementation of `IFactory<int, InjectionPipeline>`
-    - **Context Builder** – Implementation of `IFactory<InjectionContext>`
+### Manual Injection
+1. Navigate to **Tools → Fraktal Framework → Injection**.
+2. Configure:
+   - **Injection Pipeline Builder** – Configures the injection process
+   - **Injection Context Builder** – Sets up services and context
 3. Click **Inject** to populate all eligible dependencies in the scene.
 
-> ⚡ Fraktal will display real-time feedback about successful and failed injections.
+### Auto-Injection
+Enable automatic injection in **Project Settings → Fraktal**:
+- **Automatically Inject On Changes** – Runs injection when hierarchy changes
+- **Show Results** – Displays injection results window
+
+> ⚡ Fraktal displays real-time feedback about successful and failed injections.
 
 ---
 
@@ -90,23 +101,25 @@ Strategies define **how a dependency is located**.
 ```csharp
 public class CustomStrategy : IFieldStrategy
 {
-    public bool Process(UnityEngine.Object obj, IField field, InjectionContext ctx)
+    public bool Process(UnityEngine.Object obj, IField field, 
+                       InjectionContext ctx, UnityEngine.Object instance)
     {
-        if (obj is GameObject go)
+        if (obj is GameObject go && go.CompareTag("Injectable"))
         {
-            if (go.CompareTag("Injectable"))
+            if (field.IsAssignable(go))
             {
-                field.SetValue(go);
+                field.SetValue(go, instance);
                 return true;
             }
-            return false;
         }
 
-        var comp = (Component)obj;
-        if (comp.gameObject.CompareTag("Injectable"))
+        if (obj is Component comp && comp.gameObject.CompareTag("Injectable"))
         {
-            field.SetValue(obj);
-            return true;
+            if (field.IsAssignable(obj))
+            {
+                field.SetValue(obj, instance);
+                return true;
+            }
         }
 
         return false;
@@ -114,11 +127,11 @@ public class CustomStrategy : IFieldStrategy
 }
 ```
 
-> **Note:** Simply implementing `IFieldStrategy` automatically registers your strategy — no extra setup required.
+> **Note:** Create a custom attribute extending `AutoDependencyAttribute` to use your strategy.
 
 ### 2. Pipeline Customization
 
-The injection pipeline is a sequence of **steps** that transform or consume the `InjectionContext`.
+The injection pipeline is a sequence of **steps** that process the `InjectionContext`.
 
 ```csharp
 public class ValidationStep : IPipelineStep<InjectionContext>
@@ -131,7 +144,8 @@ public class ValidationStep : IPipelineStep<InjectionContext>
             return input;
         }
 
-        Debug.Log($"Processing {service.FieldCount} uninitialized fields");
+        var fields = service.GetFields();
+        Debug.Log($"Processing {fields.Count} objects with unresolved fields");
         return input;
     }
 }
@@ -139,15 +153,26 @@ public class ValidationStep : IPipelineStep<InjectionContext>
 
 ### 3. Custom Pipeline Builder
 
-Steps don't get registered automatically — you need a custom **pipeline builder** to control the injection process.
+Pipeline builders control the injection process by configuring pipeline steps.
 
 ```csharp
-public class CustomPipelineBuilder : IFactory<int, InjectionPipeline>
+public class CustomPipelineBuilder : IInjectionPipelineFactory
 {
     public InjectionPipeline Create(int phase)
     {
         var pipeline = new InjectionPipeline();
-        pipeline.AddStep(new ValidationStep());
+        
+        pipeline.Add(new TrackHierarchyStep());
+        
+        if (phase == 0)
+        {
+            pipeline.Add(new CollectFieldStep());
+            pipeline.Add(new ValidationStep()); // Custom step
+        }
+        
+        pipeline.Add(new ProcessFieldStep());
+        pipeline.Add(new ApplySavesStep());
+        
         return pipeline;
     }
 }
@@ -158,28 +183,53 @@ public class CustomPipelineBuilder : IFactory<int, InjectionPipeline>
 The context builder configures the **services and data** available during injection.
 
 ```csharp
-public class CustomContextBuilder : IFactory<IjectionContext>
+public class CustomContextBuilder : IInjectionContextFactory
 {
     public InjectionContext Create()
     {
         var context = new InjectionContext();
-
-        // Example: Register a service used by pipeline steps
+        
+        // Register required services
+        context.Services.Register<IFieldFactory>(new ReflectionFieldFactory());
+        context.Services.Register<IHierarchyTracker>(new HashSetHierarchyTracker());
+        context.Services.Register<IFailedFieldsService>(new FailedFieldsService());
+        context.Services.Register<IChangesTracker>(new ChangesTracker());
         context.Services.Register<IEmptyFieldsService>(new EmptyFieldsService());
-
+        context.Services.Register<ISucceededFieldsService>(new SucceededFieldsService());
+        
+        // Add custom services
+        context.Services.Register<IMyCustomService>(new MyCustomService());
+        
         return context;
     }
 }
 ```
 
-### 5. Putting It All Together
+### 5. Using Custom Components
 
-When you select **Tools → Fraktal Framework → Inject**, the menu allows you to:
+Configure your custom builders in the injection window or set them as defaults in **Project Settings → Fraktal**.
 
-- **Pipeline Builder**: Choose any type implementing `IFactory<int, InjectionPipeline>`
-- **Context Builder**: Choose any type implementing `IFactory<InjectionContext>`
+---
 
-Click **Inject** and Fraktal will run your custom pipeline using your custom context.
+## Architecture Overview
+
+### Pipeline Architecture
+The framework uses a configurable pipeline with these standard steps:
+
+1. **TrackHierarchyStep** – Manages object hierarchy state
+2. **CollectFieldStep** – Discovers dependency fields via reflection (phase 0 only)
+3. **ProcessFieldStep** – Resolves dependencies using strategies
+4. **ApplySavesStep** – Persists changes to Unity assets
+
+### Service System
+Core services manage injection state:
+- `IEmptyFieldsService` – Tracks unresolved fields
+- `ISucceededFieldsService` – Tracks successful injections
+- `IFailedFieldsService` – Tracks failed injections
+- `IChangesTracker` – Manages Unity object modifications
+
+### Custom Serialization
+The framework includes custom serialization to handle Unity's limitations with dependency references, ensuring proper persistence across editor sessions.
 
 ---
 
@@ -198,7 +248,7 @@ Click **Inject** and Fraktal will run your custom pipeline using your custom con
 - Unity 6000.1.11f1 with .NET Framework
 
 **Likely Compatible:**
-- Unity 2021.2+ (untested - please report results)
+- Unity 2021.3+ (based on package requirements)
 
 **Known Issues:**
 - Requires .NET Framework API compatibility level
@@ -214,9 +264,6 @@ Click **Inject** and Fraktal will run your custom pipeline using your custom con
 2. Click **+** → *Install package from Git URL…*
 3. Paste: `https://github.com/fraktal-studio/design-patterns.git`
 4. Click Install
-5. Click **+** → *Install package from Git URL* again
-6. Paste `https://github.com/fraktal-studio/fraktal-framework.git`
-7. Click Install
 
 ---
 
@@ -229,7 +276,11 @@ Click **Inject** and Fraktal will run your custom pipeline using your custom con
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Code standards and documentation requirements
+- Development setup and testing
+- Pull request process
+- Community guidelines
 
 ---
 

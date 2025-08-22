@@ -1,5 +1,6 @@
 ﻿using Fraktal.Framework.DI.Injector.FieldManagement;
 using Fraktal.Framework.DI.Injector.Pipeline;
+using UnityEngine;
 
 namespace Fraktal.Framework.DI.Injector.Services
 {
@@ -71,6 +72,6 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// like hierarchy trackers or custom resolution services.
         /// </para>
         /// </remarks>
-        public bool Process(UnityEngine.Object obj, IField field, InjectionContext context);
+        public bool Process(UnityEngine.Object obj, IField field, InjectionContext context, Object instance);
     }
 }

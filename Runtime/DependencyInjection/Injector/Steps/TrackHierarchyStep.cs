@@ -44,7 +44,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
     /// <seealso cref="HashSetHierarchyTracker"/>
     /// <seealso cref="AnyChildrenMatch"/>
     /// <seealso cref="AnyParentMatch"/>
-    public class TrackHierarchyStep : IPipelineStep<InjectionContext>
+    public class TrackHierarchyStep : PipelineStep<InjectionContext>
     {
         /// <summary>
         /// Updates the hierarchy tracker with the current GameObject being processed in the injection context.
@@ -74,7 +74,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// their containing GameObject, which will be processed separately.
         /// </para>
         /// </remarks>
-        public InjectionContext Proccess(InjectionContext input)
+        public override InjectionContext Process(InjectionContext input)
         {
             if (!input.Services.GetOrRegister<IHierarchyTracker>(out var result, () => new HashSetHierarchyTracker()))
             {

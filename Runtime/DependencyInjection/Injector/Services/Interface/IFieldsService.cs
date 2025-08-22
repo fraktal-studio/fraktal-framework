@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Fraktal.Framework.DI.Injector.FieldManagement;
 using Fraktal.Framework.DI.Injector.Pipeline;
+using UnityEngine;
 
 namespace Fraktal.Framework.DI.Injector.Services
 {
@@ -48,7 +49,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// operations on the service.
         /// </para>
         /// </remarks>
-        public ICollection<IField> GetFields();
+        public IDictionary<Object, ICollection<IField>> GetFields();
         
         /// <summary>
         /// Gets the number of fields currently managed by this service.
@@ -58,7 +59,9 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This property provides an efficient way to check the size of the field collection 
         /// without needing to enumerate all fields.
         /// </remarks>
-        public int FieldCount { get; }
+        public ICollection<IField> this[Object obj] {
+            get;
+        }
         
         /// <summary>
         /// Adds a field to the service's managed collection.
@@ -78,7 +81,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="field"/> is null.
         /// </exception>
-        public void AddField(IField field);
+        public void AddField(Object obj, IField field);
         
         /// <summary>
         /// Removes a field from the service's managed collection.
@@ -92,6 +95,6 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This method is typically used by pipeline steps to move fields between different 
         /// service collections as their injection state changes (e.g., from empty to succeeded or failed).
         /// </remarks>
-        public bool RemoveField(IField field);
+        public bool RemoveField(Object obj, IField field);
     }
 }

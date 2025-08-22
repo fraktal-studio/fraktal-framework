@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using Fraktal.DesignPatterns;
 using Fraktal.Framework.DI.Injector.Attributes;
@@ -40,6 +41,8 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// Service locator containing all discovered and instantiated field strategies.
         /// </summary>
         private ServiceLocator registration = new ServiceLocator();
+        
+        private Dictionary<Type, ICollection<IField>> cachedFields =  new Dictionary<Type, ICollection<IField>>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReflectionFieldFactory"/> class.
@@ -102,19 +105,51 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// var field2 = factory.Create(regularFieldInfo, component); // Returns null
         /// </code>
         /// </example>
-        public IField Create(FieldInfo field, UnityEngine.Object component)
+        public ICollection<IField> Create(UnityEngine.Object component)
         {
-            AutoDependencyAttribute attr = field.GetCustomAttribute<AutoDependencyAttribute>();
-            if (attr == null) return null;
-            if (!registration.Get(attr.DependencyStrategy, out var strategy))
-            {
-                Debug.LogWarning($"The provided type is not a strategy: {component.GetType().Name}: {field.FieldType.Name} {field.Name}");
-                return null;
-            }
-
-            var strat = (IFieldStrategy)strategy;
+            if (cachedFields.TryGetValue(component.GetType(), out ICollection<IField> cached))
+                return cached;
             
-            return new ReflectionField(field, component, strat);
+            var fields = new HashSet<IField>();
+            foreach (FieldInfo fieldInfo in component.GetType()
+                         .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                IField result = CreateField(fieldInfo);
+                if (result == null)
+                    continue;
+                fields.Add(result);
+            }
+            cachedFields[component.GetType()] = fields;
+            return fields;
         }
+
+        private IField CreateField(FieldInfo field)
+        {
+            AutoDependencyAttribute attr= field.GetCustomAttribute<AutoDependencyAttribute>();
+            if (attr == null) return null;
+
+            if (!registration.Get(attr.DependencyStrategy, out var strategy))
+                return null;
+
+            if (strategy is not IFieldStrategy casted)
+                return null;
+
+            return new ReflectionField(field, casted);
+        }
+        
+        // public ICollection<IField> Create(UnityEngine.Object component)
+        // {
+        //     AutoDependencyAttribute attr = field.GetCustomAttribute<AutoDependencyAttribute>();
+        //     if (attr == null) return null;
+        //     if (!registration.Get(attr.DependencyStrategy, out var strategy))
+        //     {
+        //         Debug.LogWarning($"The provided type is not a strategy: {component.GetType().Name}: {field.FieldType.Name} {field.Name}");
+        //         return null;
+        //     }
+        //
+        //     var strat = (IFieldStrategy)strategy;
+        //     
+        //     return new ReflectionField(field, strat);
+        // }
     }
 }

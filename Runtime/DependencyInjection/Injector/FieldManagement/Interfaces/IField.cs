@@ -1,6 +1,7 @@
 ﻿using System;
 using Fraktal.Framework.DI.Injector.Pipeline;
 using Fraktal.Framework.DI.Injector.Services;
+using Object = UnityEngine.Object;
 
 namespace Fraktal.Framework.DI.Injector.FieldManagement
 {
@@ -35,13 +36,13 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement
         /// Gets the current value of the field.
         /// </summary>
         /// <returns>The current value of the field, or null if the field is unassigned.</returns>
-        public object GetValue();
+        public object GetValue(object instance);
         
         /// <summary>
         /// Sets the value of the field.
         /// </summary>
         /// <param name="value">The value to assign to the field. Should be compatible with the field type.</param>
-        public void SetValue(object value);
+        public void SetValue(object value, object instance);
         
         /// <summary>
         /// Gets the name of the field.
@@ -57,12 +58,6 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement
         /// <c>true</c> if the value can be assigned to the field; otherwise, <c>false</c>.
         /// </returns>
         public bool IsAssignable(object value);
-        
-        /// <summary>
-        /// Gets the Unity object instance that contains this field.
-        /// </summary>
-        /// <returns>The Unity object instance containing the field.</returns>
-        public UnityEngine.Object GetInstance();
 
         /// <summary>
         /// Attempts to process and resolve the dependency for this field using the provided candidate object.
@@ -78,9 +73,9 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement
         /// The strategy determines whether the provided value is suitable for this field based on 
         /// criteria such as type compatibility, object hierarchy relationships, and other custom logic.
         /// </remarks>
-        public bool Process(UnityEngine.Object value, InjectionContext context)
+        public bool Process(UnityEngine.Object value, InjectionContext context, Object instance)
         {
-            return GetStrategy().Process(value, this,context);
+            return GetStrategy().Process(value, this,context, instance);
         }
         
         /// <summary>
@@ -88,5 +83,7 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement
         /// </summary>
         /// <returns>The <see cref="IFieldStrategy"/> instance associated with this field.</returns>
         public IFieldStrategy GetStrategy();
+
+        public Attribute GetAttribute();
     }
 }

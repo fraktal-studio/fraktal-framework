@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Fraktal.Framework.DI.Injector.Services;
 using UnityEngine;
 
@@ -33,13 +35,11 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// </summary>
         private readonly FieldInfo field;
         /// <summary>
-        /// The Unity object instance that contains the field.
-        /// </summary>
-        private readonly UnityEngine.Object instance;
-        /// <summary>
         /// The strategy used to resolve dependencies for this field.
         /// </summary>
         private readonly IFieldStrategy strategy;
+
+        private readonly DependencyAttribute attributes;
         
         /// <summary>
         /// Initializes a new instance of the <see cref="ReflectionField"/> class.
@@ -50,11 +50,11 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="field"/>, <paramref name="instance"/>, or <paramref name="strategy"/> is null.
         /// </exception>
-        public ReflectionField(FieldInfo field, UnityEngine.Object instance, IFieldStrategy strategy)
+        public ReflectionField(FieldInfo field, IFieldStrategy strategy)
         {
             this.field = field;
-            this.instance = instance;
             this.strategy = strategy;
+            this.attributes = field.GetCustomAttribute<DependencyAttribute>();
         }
         
         /// <summary>
@@ -74,7 +74,7 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// This method uses reflection to access the field value. If the field is a value type 
         /// and uninitialized, it will return the default value for that type.
         /// </remarks>
-        public object GetValue()
+        public object GetValue(object instance)
         {
             
             return field.GetValue(instance);
@@ -91,7 +91,7 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// <exception cref="ArgumentException">
         /// Thrown when the provided value is not assignable to the field type.
         /// </exception>
-        public void SetValue(object value)
+        public void SetValue(object value, object instance)
         {
             field.SetValue(instance, value);
         }
@@ -123,21 +123,17 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         }
 
         /// <summary>
-        /// Gets the Unity object instance that contains this field.
-        /// </summary>
-        /// <returns>The Unity object instance containing the field.</returns>
-        public UnityEngine.Object GetInstance()
-        {
-            return instance;
-        }
-
-        /// <summary>
         /// Gets the strategy used to resolve dependencies for this field.
         /// </summary>
         /// <returns>The <see cref="IFieldStrategy"/> instance associated with this field.</returns>
         public IFieldStrategy GetStrategy()
         {
             return strategy;
+        }
+
+        public Attribute GetAttribute()
+        {
+            return attributes;
         }
 
         /// <summary>
@@ -150,7 +146,7 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// </returns>
         private bool Equals(ReflectionField other)
         {
-            return Equals(field, other.field) && Equals(instance, other.instance) && Equals(strategy, other.strategy);
+            return Equals(field, other.field) && Equals(strategy, other.strategy);
         }
 
         /// <summary>
@@ -179,7 +175,7 @@ namespace Fraktal.Framework.DI.Injector.FieldManagement.Implementations
         /// </remarks>
         public override int GetHashCode()
         {
-            return HashCode.Combine(field, instance);
+            return HashCode.Combine(field);
         }
     }
 }

@@ -5,6 +5,7 @@ using Fraktal.Framework.DI.Injector.FieldManagement;
 using Fraktal.Framework.DI.Injector.Pipeline;
 using Fraktal.Framework.DI.Injector.Services;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Fraktal.Framework.DI.Injector.Steps
 {
@@ -46,8 +47,9 @@ namespace Fraktal.Framework.DI.Injector.Steps
     /// <seealso cref="IFieldStrategy"/>
     /// <seealso cref="IEmptyFieldsService"/>
     [Serializable]
-    public class ProcessFieldStep : IPipelineStep<InjectionContext>
+    public class ProcessFieldStep : PipelineStep<InjectionContext>
     {
+        private HashSet<KeyValuePair<Object, IField>> toRemove = new HashSet<KeyValuePair<Object, IField>>();
         /// <summary>
         /// Processes the injection context to attempt dependency resolution for all collected empty fields.
         /// </summary>
@@ -76,23 +78,57 @@ namespace Fraktal.Framework.DI.Injector.Steps
         /// and may be resolved by subsequent objects processed through the pipeline.
         /// </para>
         /// </remarks>
-        public InjectionContext Proccess(InjectionContext input)
+        public override InjectionContext Process(InjectionContext input)
         {
-            var fieldsService = input.GetOrRegister<IEmptyFieldsService>();
-            var succeededFields = input.GetOrRegister<ISucceededFieldsService>();
-            
-            UnityEngine.Object obj = input.currentObject;
-            ICollection<IField> emptyFields = fieldsService.GetFields();
-            foreach (IField field in emptyFields)
+            if (!input.Services.Get(out IEmptyFieldsService fieldsService))
             {
-                if (field.Process(obj, input))
-                {
-                    fieldsService.RemoveField(field);
-                    succeededFields.AddField(field);
-                }
+                Error("IEmptyFieldsService");
+                return input;
+            }
+
+            if (!input.Services.Get(out ISucceededFieldsService succeededFields))
+            {
+                Error("ISucceededFieldsService");
+                return input;
+            }
+
+            if (!input.Services.Get(out IChangesTracker tracker))
+            {
+                Error("IChangesTracker");
+                return input;
             }
             
+            UnityEngine.Object obj = input.currentObject;
+            var emptyFields = fieldsService.GetFields();
+            foreach (var kvp in emptyFields)
+            {
+                var collection = kvp.Value;
+                var instance = kvp.Key;
+                
+                foreach (var field in collection)
+                {
+                    if (field.Process(obj, input, instance))
+                    {
+                        tracker.AddChanges(instance);
+                        toRemove.Add(new (instance, field));
+                        succeededFields.AddField(instance, field);
+                    }
+                }
+            }
+
+            foreach (var kvp in toRemove)
+            {
+                fieldsService.RemoveField(kvp.Key, kvp.Value);
+            }
+            toRemove.Clear();
+            
             return input;
+        }
+
+        private void Error(string name)
+        {
+            Debug.LogError($"{name} not found!");
+            SetCancelled(true);
         }
     }
 }

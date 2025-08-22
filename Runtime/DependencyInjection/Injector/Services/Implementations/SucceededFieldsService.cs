@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Fraktal.Framework.DI.Injector.FieldManagement;
+using UnityEngine;
 
 namespace Fraktal.Framework.DI.Injector.Services
 {
@@ -35,7 +36,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor provides a convenient way to create a succeeded fields service with 
         /// standard behavior, using a hash set for efficient field management.
         /// </remarks>
-        public SucceededFieldsService() : base(new HashSet<IField>())
+        public SucceededFieldsService() : base(new Dictionary<Object, ICollection<IField>>())
         {
             
         }
@@ -48,7 +49,7 @@ namespace Fraktal.Framework.DI.Injector.Services
         /// This constructor allows for custom collection implementations to be used for storing 
         /// succeeded fields, which may be useful for ordered tracking or specialized reporting requirements.
         /// </remarks>
-        public SucceededFieldsService(ICollection<IField> fields) : base(fields)
+        public SucceededFieldsService(IDictionary<Object, ICollection<IField>> fields) : base(fields)
         {
             
         }

@@ -6,80 +6,12 @@ using UnityEngine;
 
 namespace Fraktal.Framework.Editor.Drawers
 {
-    /// <summary>
-    /// Utility class for rendering type selection dropdown controls in Unity Editor interfaces.
-    /// Provides cached type discovery and user-friendly type selection capabilities.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This class serves as a specialized GUI utility for creating type selection interfaces 
-    /// in Unity Editor windows and inspectors. It leverages Unity's TypeCache system for 
-    /// performance and provides caching mechanisms to avoid repeated type discovery operations.
-    /// </para>
-    /// <para>
-    /// Key features include:
-    /// </para>
-    /// <list type="bullet">
-    /// <item>Cached type discovery using Unity's TypeCache for performance</item>
-    /// <item>Automatic filtering of Unity Object types to prevent serialization issues</item>
-    /// <item>Support for both generic and non-generic type constraints</item>
-    /// <item>Automatic instantiation of selected types via parameterless constructors</item>
-    /// <item>User-friendly dropdown interfaces with type name display</item>
-    /// </list>
-    /// <para>
-    /// The class is particularly useful for configuring polymorphic fields marked with 
-    /// SerializeReference, where users need to select from available implementations 
-    /// of an interface or abstract class.
-    /// </para>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// var drawer = new TypeDrawer();
-    /// 
-    /// // For generic type selection
-    /// IMyService service = drawer.TypeField&lt;IMyService&gt;(currentService);
-    /// 
-    /// // For runtime type selection
-    /// object factory = drawer.TypeField(typeof(IFactory), currentFactory);
-    /// </code>
-    /// </example>
-    public class TypeDrawer
+      public class TypeDrawer
     {
-        /// <summary>
-        /// Cache of discovered types organized by their base type or interface.
-        /// </summary>
-        /// <remarks>
-        /// This dictionary maps constraint types (interfaces, abstract classes, base classes) 
-        /// to arrays of their implementing or derived types. The cache prevents repeated 
-        /// TypeCache queries, which can be expensive for frequently rendered GUI elements.
-        /// </remarks>
         private Dictionary<Type, Type[]> cachedTypes;
         
-        /// <summary>
-        /// Cache of user-friendly type names corresponding to cached types.
-        /// </summary>
-        /// <remarks>
-        /// This dictionary maps constraint types to arrays of display names for their 
-        /// implementing types. The names are derived from Type.Name and used for 
-        /// dropdown display purposes.
-        /// </remarks>
         private Dictionary<Type, string[]> cachedNames;
         
-        /// <summary>
-        /// Discovers and caches all types that derive from or implement the specified generic type constraint.
-        /// </summary>
-        /// <typeparam name="T">The type constraint (interface, abstract class, or base class) to search for implementations.</typeparam>
-        /// <returns>An array of <see cref="Type"/> objects representing all discovered implementations.</returns>
-        /// <remarks>
-        /// <para>
-        /// This method uses Unity's TypeCache.GetTypesDerivedFrom&lt;T&gt;() for efficient type discovery. 
-        /// The results are cached to avoid repeated expensive reflection operations during GUI rendering.
-        /// </para>
-        /// <para>
-        /// The method is thread-safe and handles lazy initialization of the cache dictionary. 
-        /// Subsequent calls for the same type constraint will return cached results immediately.
-        /// </para>
-        /// </remarks>
         public Type[] GetOrRegisterTypes<T>()
         {
             if (cachedTypes == null)
@@ -92,17 +24,6 @@ namespace Fraktal.Framework.Editor.Drawers
             return cachedTypes[typeof(T)];
         }
 
-        /// <summary>
-        /// Retrieves or generates user-friendly display names for types associated with the specified constraint.
-        /// </summary>
-        /// <param name="type">The constraint type for which to retrieve display names.</param>
-        /// <returns>An array of strings containing user-friendly names for each implementing type.</returns>
-        /// <remarks>
-        /// <para>
-        /// This method generates display names from Type.Name for use in dropdown controls. 
-        /// Names are cached to avoid repeated string operations during GUI rendering.
-        /// </para>
-        /// </remarks>
         private string[] GetOrRegisterNames(Type type)
         {
             if (cachedNames == null)
@@ -114,17 +35,6 @@ namespace Fraktal.Framework.Editor.Drawers
             return cachedNames[type];
         }
 
-        /// <summary>
-        /// Discovers and caches all non-Unity Object types that derive from or implement the specified type constraint.
-        /// </summary>
-        /// <param name="type">The constraint type (interface, abstract class, or base class) to search for implementations.</param>
-        /// <returns>An array of <see cref="Type"/> objects representing all discovered non-Unity Object implementations.</returns>
-        /// <remarks>
-        /// <para>
-        /// This overload provides runtime type constraint support and automatically filters out Unity Object types 
-        /// to prevent serialization issues. Unity Objects cannot be properly serialized with SerializeReference 
-        /// and should be handled through standard Unity serialization mechanisms.
-        /// </para>
         /// <para>
         /// The filtering ensures that only plain C# types suitable for SerializeReference serialization 
         /// are included in the results.

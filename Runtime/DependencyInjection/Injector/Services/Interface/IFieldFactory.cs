@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using Fraktal.DesignPatterns;
 using Fraktal.Framework.DI.Injector.FieldManagement;
 
@@ -21,7 +22,7 @@ namespace Fraktal.Framework.DI.Injector.Services
     /// </remarks>
     /// <seealso cref="ReflectionFieldFactory"/>
     /// <seealso cref="IField"/>
-    public interface IFieldFactory : IFactory<FieldInfo,UnityEngine.Object, IField>
+    public interface IFieldFactory : IFactory<UnityEngine.Object, ICollection<IField>>
     {
         // Interface inherits Create method from base factory interface:
         // IField Create(FieldInfo field, UnityEngine.Object component);

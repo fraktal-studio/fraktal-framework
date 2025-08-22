@@ -80,16 +80,14 @@ namespace Fraktal.Framework.DI.Injector.Strategies
         /// are tracked as parents, which may need review to ensure correct parent-matching behavior.
         /// </para>
         /// </remarks>
-        public bool Process(Object obj, IField field, InjectionContext context)
+        public bool Process(Object obj, IField field, InjectionContext context, Object instance)
         {
-            if (!context.Get(out IHierarchyTracker tracker)) return false;
-
-            Object instance = field.GetInstance();
+            if (!context.Services.Get(out IHierarchyTracker tracker)) return false;
             if (instance is not Component component) return false;
             if (tracker.IsParent(component.gameObject)) return false;
             if (!field.GetFieldType().IsAssignableFrom(obj.GetType())) return false;
             
-            field.SetValue(obj);
+            field.SetValue(obj, instance);
             
             return true;
         }
