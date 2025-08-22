@@ -264,6 +264,9 @@ The framework includes custom serialization to handle Unity's limitations with d
 2. Click **+** → *Install package from Git URL…*
 3. Paste: `https://github.com/fraktal-studio/design-patterns.git`
 4. Click Install
+5. Click **+** → *Install package from Git URL…* 
+6. Paste: `https://github.com/fraktal-studio/fraktal-framework.git`
+7. Click Install
 
 ---
 
