@@ -8,6 +8,6 @@
   "keywords": ["fraktal", "di", "framework", "unity"],
   "license": "MIT",
   "dependencies": {
-    "com.fraktal.design-patterns": "1.0.3"
+    "com.fraktal.design-patterns": "1.1.5"
   }
 }
