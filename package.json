@@ -1,7 +1,7 @@
 {
   "name": "com.fraktal.framework",
   "displayName": "Fraktal Framework",
-  "version": "1.1.0",
+  "version": "1.1.6",
   "unity": "2021.3",
   "description": "Modular dependency-injection framework for Unity.",
   "author": { "name": "Fraktal Studio", "url": "https://github.com/fraktal-studio" },
