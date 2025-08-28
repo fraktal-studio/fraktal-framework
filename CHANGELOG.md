@@ -30,6 +30,7 @@ All notable changes to Fraktal Framework will be documented here.
 - Prefab support
 - Custom serialization logic instead of using OdinSerializer
 - Automatic dependency resolution that tracks editor changes
+- BySelfOrChild attribute
 
 ### Changed
 - Removed unmaintainable XML docs

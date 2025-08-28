@@ -86,7 +86,7 @@ namespace Fraktal.Framework.DI.Injector.Strategies
         /// </remarks>
         public bool Process(Object obj, IField field, InjectionContext context, Object instance)
         {
-            if (!field.GetFieldType().IsAssignableFrom(obj.GetType()))
+            if (!field.IsAssignable(obj))
                 return false;
             field.SetValue(obj, instance);
             return true;

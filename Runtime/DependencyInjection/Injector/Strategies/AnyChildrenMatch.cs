@@ -84,7 +84,7 @@ namespace Fraktal.Framework.DI.Injector.Strategies
             if (!context.Services.Get(out IHierarchyTracker tracker)) return false;
             if (instance is not Component component) return false;
             if (!tracker.IsParent(component.gameObject)) return false;
-            if (!field.GetFieldType().IsAssignableFrom(obj.GetType())) return false;
+            if (!field.IsAssignable(obj)) return false;
             
             field.SetValue(obj, instance);
             

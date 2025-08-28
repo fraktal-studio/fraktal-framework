@@ -107,6 +107,7 @@ namespace Fraktal.Framework.DI.Injector.Steps
                 
                 foreach (var field in collection)
                 {
+                    
                     if (field.Process(obj, input, instance))
                     {
                         tracker.AddChanges(instance);
